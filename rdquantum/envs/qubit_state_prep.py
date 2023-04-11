@@ -27,17 +27,17 @@ class QubitStatePrepEnv(gym.Env):
         self.render_mode = render_mode
 
     def _get_info(self):
-        return self._measurement_outcome
+        return {"measurement_outcome": self._measurement_outcome}
 
     def _get_obs(self):
-        return self._m_sigmaZ    
+        return int(self._m_sigmaZ)
 
     def reset(self, seed=None, options=None):
         # Seed self.np_random
         super().reset(seed=seed)
 
         self._measurement_outcome = None
-        self._m_sigmaZ = None
+        self._m_sigmaZ = 1
 
         observation = self._get_obs()
         info = self._get_info()
