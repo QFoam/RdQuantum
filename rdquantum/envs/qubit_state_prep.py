@@ -45,12 +45,12 @@ class QubitStatePrepEnv(gym.Env):
         return observation, info
 
     def step(self, action):
-        a = action
+        a = action[0]
 
         # The unitary matrix U(\theta)
         U = np.cos(np.pi * a) * qeye(2) - 1j * np.sin(np.pi * a) * sigmax()
 
-        # Initial state
+        # Initial state |0>
         Rho_init = basis(2,0)
 
         # Perform gate operation U
@@ -60,9 +60,9 @@ class QubitStatePrepEnv(gym.Env):
         self._measurement_outcome = measure(Rho_final, sigmaz())
         self._m_sigmaZ = self._measurement_outcome[0]
 
-        terminated = False
         observation = self._get_obs()
         reward = -observation
+        terminated = True
         info = self._get_info()
 
         return observation, reward, terminated, False, info
