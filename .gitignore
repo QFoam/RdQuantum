@@ -3,3 +3,4 @@
 __pycache__/
 rdquantum.egg-info/
 qobjevo*
+build/
