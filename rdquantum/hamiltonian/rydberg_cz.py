@@ -43,12 +43,13 @@ class Rydberg_Cz():
         self.r_amp = r_amp              # MHz
         self.r_gate_time = r_gate_time  # \mu s
         ## Action space: control parameters
+        value_eps = 1e-5 # for mumerical stability
         self.action_space = spaces.Dict(
             {
-            'omega_p_amp': spaces.Box(0, self.r_amp, shape=(1,), dtype=np.float32),
-            'omega_r_amp': spaces.Box(0, self.r_amp, shape=(1,), dtype=np.float32),
-            'delta_p_amp': spaces.Box(0, self.r_amp, shape=(1,), dtype=np.float32),
-            'gate_time': spaces.Box(0, self.r_gate_time, shape=(1,), dtype=np.float32)
+            'omega_p_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
+            'omega_r_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
+            'delta_p_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
+            'gate_time': spaces.Box(value_eps, 1, shape=(), dtype=np.float32)
             }
         )
         ## Observation space: measurement outcomes
