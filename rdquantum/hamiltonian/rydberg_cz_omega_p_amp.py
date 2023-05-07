@@ -43,10 +43,10 @@ class Rydberg_Cz_Omega_P_amp():
         self.r_amp = r_amp              # MHz
         self.r_gate_time = r_gate_time  # \mu s
         ## Action space: control parameters
-        value_eps = 1e-5 # for mumerical stability
+        # value_eps = 1e-10 # for mumerical stability
         self.action_space = spaces.Dict(
             {
-            'omega_p_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32)
+            'omega_p_amp': spaces.Box(-1, 1, shape=(), dtype=np.float32)
             # 'omega_r_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
             # 'delta_p_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
             # 'gate_time': spaces.Box(value_eps, 1, shape=(), dtype=np.float32)
@@ -58,7 +58,7 @@ class Rydberg_Cz_Omega_P_amp():
     def _action_to_control_params(self, action):
         control_params = {
             'omega_p': GaussianPulse(
-                amp = self.r_amp * action['omega_p_amp'], 
+                amp = (self.r_amp/2) + (self.r_amp/2) * action['omega_p_amp'], 
                 gate_time = 1.0, 
                 tau = 0.165 * 1.0
                 ),
