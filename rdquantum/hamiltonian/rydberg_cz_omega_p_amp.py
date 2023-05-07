@@ -53,7 +53,7 @@ class Rydberg_Cz_Omega_P_amp():
             }
         )
         ## Observation space: measurement outcomes
-        self.observation_space = spaces.Discrete(2)
+        self.observation_space = spaces.Discrete(1, start=1)
 
     def _action_to_control_params(self, action):
         control_params = {
