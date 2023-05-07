@@ -23,15 +23,12 @@ class HamiltonianTrainerEnv(gym.Env):
         return {'tset': None}
 
     def _get_obs(self):
-        # Convert measurement outcome to observations
-        observation = self._measurement_outcome
+        observation = self.observation_space.sample()
         return observation
 
     def reset(self, seed=None, options=None):
         # Seed self.np_random
         super().reset(seed=seed)
-
-        self._measurement_outcome = self.observation_space.sample()
 
         observation = self._get_obs()
         info = self._get_info()
@@ -40,7 +37,7 @@ class HamiltonianTrainerEnv(gym.Env):
 
     def step(self, action):
         # Get measurement outcome
-        prob, self._measurement_outcome, reward = self.Hamiltonian.measurement(action)
+        prob, measurement_outcome, reward = self.Hamiltonian.measurement(action)
         terminated = True
 
         observation = self._get_obs()
