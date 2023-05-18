@@ -2,6 +2,8 @@ import qutip as qt
 
 class Hamiltonian():
     def __init__(self, solver=qt.mesolve):
+        self._get_hamiltonian()
+        self._get_decay()
         self.solver = solver
 
     def _action_to_control_params(self, action):
@@ -10,7 +12,7 @@ class Hamiltonian():
     def _get_hamiltonian(self):
         return hamiltonian
     
-    def _get_decay_terms(self):
+    def _get_decay(self):
         return decay_terms
 
     def _get_measurement_outcome(self):
@@ -25,7 +27,7 @@ class Hamiltonian():
     def measurement(self, action, evaluation=False):
         self.control_params = self._action_to_control_params(action)
         self.hamiltonian = self._get_hamiltonian()
-        self.decay_terms = self._get_decay_terms()
+        self.decay_terms = self._get_decay()
 
         results = self.solver(
             H = self.hamiltonian,
