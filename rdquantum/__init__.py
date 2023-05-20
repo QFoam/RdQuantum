@@ -7,7 +7,7 @@ register(
 )
 
 register(
-     id="rdquantum/HamiltonianTrainer-v2023.04.22",
-     entry_point="rdquantum.envs:HamiltonianTrainerEnv",
+     id="rdquantum/QuantumControlEnv-v2023.05.19",
+     entry_point="rdquantum.envs:QuantumControlEnv",
      max_episode_steps=2,
 )
