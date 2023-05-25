@@ -1,22 +1,16 @@
 class QuantumCircuit():
-    def __init__(self, observation_space, action_space):
-        # RL parameters
-        self.observation_space = observation_space
-        self.action_space = action_space
+    def __init__(self):
+        """ Quantum circuit
+        """
+        self.quantum_circuit()
 
-        # Pysical system 
-        self.init_state = self._get_initial_state()
-
-    def _get_quantum_circuit(self, control_params: dict):
-        raise NotImplementedError
-    
-    def _get_initail_state(self):
+    def quantum_circuit(self, control_params: dict):
         raise NotImplementedError
 
     def _action_to_control_params(self, action) -> dict:
         raise NotImplementedError
 
-    def _measurement_outcome_to_reward(self, measurement_outcome) -> list:
+    def _get_reward(self) -> list:
         raise NotImplementedError
 
     def _get_fidelity(self) -> float:
@@ -25,20 +19,21 @@ class QuantumCircuit():
     def _update_quantum_circuit(self, control_params):
         self.quantumcircuit = self._get_quantum_circuit(control_params)
 
-    def run(self, action, observation) -> tuple(list, list, bool, dict):
+    def run_rl_step(self, action, observation) -> tuple[list, list, bool, dict]:
         # Update self.quantumcircuit
         control_params = _action_to_control_params(action)
         self._update_quantum_circuit(control_params)
 
         # Run self.quantumcircuit
-        observation, measurement_outcome, info = self.quantumcircuit.run(self.init_state)
-        reward = self._measurement_outcome_to_reward(measurement_outcome)
+        self.observation = self._get_obs()
+        self.target_state = self.cc(self.init_state)
+        self.measurement_outcome, self.info = self.rc(self.target_state)
+        self.reward = self._get_reward()
+        self.terminated = True
 
-        terminated = True
+        return self.observation, self.reward, self.terminated, info
 
-        return observation, reward, terminated, info
-
-    def evaluate(self, action, observation):
+    def evaluate(self, action, observation=None) -> float:
         # Update self.quantumcircuit
         control_params = _action_to_control_params(action)
         self._update_quantum_circuit(control_params)
