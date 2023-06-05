@@ -7,6 +7,12 @@ class QuantumCircuit():
     def quantum_circuit(self, control_params: dict):
         raise NotImplementedError
 
+    def run_cc(self, init_state):
+        raise NotImplementedError
+
+    def run_rc(self, final_state):
+        raise NotImplementedError
+
     def _action_to_control_params(self, action) -> dict:
         raise NotImplementedError
 
@@ -26,8 +32,8 @@ class QuantumCircuit():
 
         # Run self.quantumcircuit
         self.observation = self._get_obs()
-        self.target_state = self.cc(self.init_state)
-        self.measurement_outcome, self.info = self.rc(self.target_state)
+        self.final_state = self.run_cc(self.init_state)
+        self.measurement_outcome, self.info = self.run_rc(self.final_state)
         self.reward = self._get_reward()
         self.terminated = True
 

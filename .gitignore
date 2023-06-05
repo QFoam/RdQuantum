@@ -5,3 +5,4 @@ rdquantum.egg-info/
 qobjevo*
 build/
 *.swp
+test/
