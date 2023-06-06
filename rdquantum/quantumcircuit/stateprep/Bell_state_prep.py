@@ -3,10 +3,13 @@ from typing import Optional, Tuple, Callable
 from gymnasium import spaces
 import qutip as qt
 from qutip.qip.circuit import QubitCircuit, Gate
-from qutip import tensor, basis
+from qutip import tensor, basis, bell_state, ket2dm, expect
+from qutip.measurement import measure, measure_observable
 
 from rdquantum.quantumcircuit import QuantumCircuit
 #from rdquantum.simulator.rydberg_atom import Rydberg_Cz_3Level
+
+import numpy as np
 
 class BellStatePrep(QuantumCircuit):
     def __init__(
@@ -22,7 +25,7 @@ class BellStatePrep(QuantumCircuit):
         """ Quantum circuit for Bell states
         """
         self.num_qubit = 2
-        self.init_state = tensor(basis(2,0), basis(2,1))
+        self.init_state = '01' 
         #self.target_state = bell01
 
         """ RL parameters
@@ -62,13 +65,16 @@ class BellStatePrep(QuantumCircuit):
 
     def run_cc(
             self, 
-            init_state,
+            init_state: str,
             ideal_hadamard: bool = True,
             ideal_control_z: bool = True
             ):
+        self.init_state = tensor(basis(2, int(init_state[0])), basis(2, int(init_state[1])))
+        self.target_state = self._map_to_Bell_state(init_state)
+
         #group1
         if ideal_hadamard:
-            gs1 = self.cc["group1"].run(state=init_state)
+            gs1 = self.cc["group1"].run(state=self.init_state)
         else:
             raise Exception("Sorry, currently we only support ideal Hadamard gate")
 
@@ -81,18 +87,31 @@ class BellStatePrep(QuantumCircuit):
 
         #group3
         if ideal_hadamard:
-            final_state = self.cc["group3"].run(state=gs2)
+            self.final_state = self.cc["group3"].run(state=gs2)
         else:
             raise Exception("Sorry, currently we only support ideal Hadamard gate")
 
-        return final_state
+        return self.final_state
 
-    def run_rc(self, final_state):
-        raise NotImplementedError
-
+    def run_rc(self):
+        """ To do
+            Need to consider the case self.backend = quantumdevice
+        """
+        prob = expect(ket2dm(self.target_state), self.final_state)
+        self.measurement_outcome = np.random.choice(2, 1, p=[(1-prob), prob])[0]
+        return self.measurement_outcome
 
     def _action_to_control_params(self, action) -> dict:
         return control_params
+
+    def _map_to_Bell_state(self, init_state):
+        bell_map = {
+                '00': '00',
+                '01': '10',
+                '10': '01',
+                '11': '11'
+                }
+        return bell_state(bell_map[init_state])
 
     def _get_reward(self) -> list:
         """ Bell state projection measurement
