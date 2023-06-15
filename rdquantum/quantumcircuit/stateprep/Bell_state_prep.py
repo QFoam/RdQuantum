@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Callable
 from gymnasium import spaces
 import qutip as qt
 from qutip.qip.circuit import QubitCircuit, Gate
-from qutip import tensor, basis, bell_state, ket2dm, expect
+from qutip import tensor, basis, bell_state, ket2dm, expect, fidelity
 from qutip.measurement import measure, measure_observable
 
 from rdquantum.quantumcircuit import QuantumCircuit
@@ -120,7 +120,8 @@ class BellStatePrep(QuantumCircuit):
         reward = [-1 + 2*m]
         return reward
 
-    def _get_fidelity(self, final_state) -> float:
+    def _get_fidelity(self) -> float:
         """ Bell fidelity
         """
-        return fidelity
+        self.Bell_fidelity = fidelity(self.final_state, self.target_state)
+        return self.Bell_fidelity
