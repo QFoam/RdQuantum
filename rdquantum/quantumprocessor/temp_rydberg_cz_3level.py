@@ -1,21 +1,29 @@
-from gymnasium import spaces
 import qutip as qt
+from gymnasium import spaces
 
-# from rdquantum.hamiltonian import Hamiltonian
-from rdquantum.hamiltonian.pulsegen import GaussianPulse
+from rdquantum.simulator.pulsegen import GaussianPulse
 
 import numpy as np
 
-class Rydberg_Cz_Omega_P_amp():
-
-    def __init__(self, solver=qt.mesolve, r_amp=500, r_gate_time=10):
+class TempRydbergCz3Level():
+    def __init__(
+        self, 
+        quantumcircuit,
+        solver=qt.mesolve, 
+        r_amp=500, 
+        r_gate_time=10
+    ):
+        self.quantumcircuit = quantumcircuit
+        
         # Physical system
-        self.num_energy_level = 5       # Number of energy levels
+        self.num_energy_level = 5
+
         ## Computing basis
         ket00 = qt.tensor(qt.basis(self.num_energy_level,0), qt.basis(self.num_energy_level,0))
         ket01 = qt.tensor(qt.basis(self.num_energy_level,0), qt.basis(self.num_energy_level,1))
         ket10 = qt.tensor(qt.basis(self.num_energy_level,1), qt.basis(self.num_energy_level,0))
         ket11 = qt.tensor(qt.basis(self.num_energy_level,1), qt.basis(self.num_energy_level,1))
+
         ## Hadamard gate
         Had = np.zeros((self.num_energy_level,self.num_energy_level))
         Had[0][0] = 1
@@ -23,6 +31,7 @@ class Rydberg_Cz_Omega_P_amp():
         Had[1][0] = 1
         Had[1][1] = -1
         Had = qt.Qobj(Had/np.sqrt(2))
+
         ## Target Bell state, rho_bell10 = 1/sqrt(2) * (|01> + |10>)
         I = qt.qeye(self.num_energy_level)
         rho0101 = qt.tensor(I, Had) * qt.ket2dm(ket01) * qt.tensor(I, Had)
@@ -42,30 +51,29 @@ class Rydberg_Cz_Omega_P_amp():
         # RL parameters
         self.r_amp = r_amp              # MHz
         self.r_gate_time = r_gate_time  # \mu s
-        ## Action space: control parameters
-        # value_eps = 1e-10 # for mumerical stability
+
+        self.observation_space = self.quantumcircuit.observation_space
+        value_eps = 1e-5 # for mumerical stability
         self.action_space = spaces.Dict(
             {
-            'omega_p_amp': spaces.Box(-1, 1, shape=(), dtype=np.float32)
-            # 'omega_r_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
-            # 'delta_p_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
-            # 'gate_time': spaces.Box(value_eps, 1, shape=(), dtype=np.float32)
+            'omega_p_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
+            'omega_r_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
+            'delta_p_amp': spaces.Box(value_eps, 1, shape=(), dtype=np.float32),
+            'gate_time': spaces.Box(value_eps, 1, shape=(), dtype=np.float32)
             }
         )
-        ## Observation space: measurement outcomes
-        self.observation_space = spaces.Discrete(1, start=1)
 
     def _action_to_control_params(self, action):
         control_params = {
             'omega_p': GaussianPulse(
-                amp = (self.r_amp/2) + (self.r_amp/2) * action['omega_p_amp'], 
-                gate_time = 1.0, 
-                tau = 0.165 * 1.0
+                amp = self.r_amp * action['omega_p_amp'], 
+                gate_time = self.r_gate_time * action['gate_time'], 
+                tau = 0.165 * self.r_gate_time * action['gate_time']
                 ),
-            'omega_r': 175,
-            'delta_p': 400,
-            'gate_time': 1.0,
-            'times': np.linspace(0.0, 1.0, 100)
+            'omega_r': self.r_amp * action['omega_r_amp'],
+            'delta_p': self.r_amp * action['delta_p_amp'],
+            'gate_time': self.r_gate_time * action['gate_time'],
+            'times': np.linspace(0.0, self.r_gate_time * action['gate_time'], 100)
         }
         return control_params
 
@@ -140,10 +148,19 @@ class Rydberg_Cz_Omega_P_amp():
 
         return c_ops
 
+    def run_rl_step(
+        self, 
+        action, 
+        e_ops=[]
+    ):
+        prob, measurement_outcome, reward = self.measurement(action)
+        observation = 1
+        terminated = True
+        
+        return observation, reward, terminated
+
     def _solve(self, action, e_ops=[]):
-        # print("Action: ", action)
         self.control_params = self._action_to_control_params(action)
-        # print("control_params: ", self.control_params)
         self.hamiltonian = self._get_hamiltonian(self.control_params)
         self.decay_terms = self._get_decay_terms(self.gamma_p, self.gamma_r)
 
