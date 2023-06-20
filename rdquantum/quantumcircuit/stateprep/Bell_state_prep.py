@@ -7,6 +7,7 @@ from qutip import tensor, basis, bell_state, ket2dm, expect, fidelity
 from qutip.measurement import measure, measure_observable
 
 from rdquantum.quantumcircuit import QuantumCircuit
+from rdquantum.simulator.rydberg_atom import RydbergCz3Level
 #from rdquantum.simulator.rydberg_atom import Rydberg_Cz_3Level
 
 import numpy as np
@@ -14,8 +15,8 @@ import numpy as np
 class BellStatePrep(QuantumCircuit):
     def __init__(
             self, 
+            processor = RydbergCz3Level,
             backend: str = "simulator", #quantumdevice/simulator
-            processor: str = "RydbergCz3Level",
             range_amp: tuple[float, str] = [100, "MHz"], 
             range_gate_time: tuple[float, str] = [1, "mus"]
             ):
@@ -24,7 +25,7 @@ class BellStatePrep(QuantumCircuit):
         
         """ Quantum circuit for Bell states
         """
-        self.num_qubit = 2
+        self.num_qubits = 2
         self.init_state = '01' 
         #self.target_state = bell01
 
@@ -46,9 +47,9 @@ class BellStatePrep(QuantumCircuit):
             |T> --|H|--|Z|--|H|--
         """
         self.cc = {
-                "group1": QubitCircuit(N=self.num_qubit),
-                "group2": QubitCircuit(N=self.num_qubit),
-                "group3": QubitCircuit(N=self.num_qubit)
+                "group1": QubitCircuit(N=self.num_qubits),
+                "group2": QubitCircuit(N=self.num_qubits),
+                "group3": QubitCircuit(N=self.num_qubits)
                 }
         self.cc["group1"].add_gate("SNOT", targets=0)
         self.cc["group1"].add_gate("SNOT", targets=1)
@@ -60,7 +61,7 @@ class BellStatePrep(QuantumCircuit):
                   |Bell|
             |T> --|    |
         """
-        self.rc = QubitCircuit(N=self.num_qubit, num_cbits=self.num_qubit)
+        self.rc = QubitCircuit(N=self.num_qubits, num_cbits=self.num_qubits)
         return self
 
     def run_cc(
@@ -72,24 +73,12 @@ class BellStatePrep(QuantumCircuit):
         self.init_state = tensor(basis(2, int(init_state[0])), basis(2, int(init_state[1])))
         self.target_state = self._map_to_Bell_state(init_state)
 
-        #group1
-        if ideal_hadamard:
+        if ideal_hadamard and ideal_control_z:
             gs1 = self.cc["group1"].run(state=self.init_state)
-        else:
-            raise Exception("Sorry, currently we only support ideal Hadamard gate")
-
-        #group2
-        if ideal_control_z:
             gs2 = self.cc["group2"].run(state=gs1)
-        else:
-            self.processor.load_circuit(self.cc["group2"])
-            gs2 = self.processor.run_state(gs1)
-
-        #group3
-        if ideal_hadamard:
             self.final_state = self.cc["group3"].run(state=gs2)
         else:
-            raise Exception("Sorry, currently we only support ideal Hadamard gate")
+            self.final_state = tempRydbergCz3Level(init_state)
 
         return self.final_state
 
