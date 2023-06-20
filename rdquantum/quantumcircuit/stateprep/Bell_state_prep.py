@@ -65,11 +65,11 @@ class BellStatePrep(QuantumCircuit):
         return self
 
     def run_cc(
-            self, 
-            init_state: str,
-            ideal_hadamard: bool = True,
-            ideal_control_z: bool = True
-            ):
+        self, 
+        init_state: str,
+        ideal_hadamard: bool = True,
+        ideal_control_z: bool = True
+    ):
         self.init_state = tensor(basis(2, int(init_state[0])), basis(2, int(init_state[1])))
         self.target_state = self._map_to_Bell_state(init_state)
 
@@ -82,13 +82,18 @@ class BellStatePrep(QuantumCircuit):
 
         return self.final_state
 
-    def run_rc(self):
+    def run_rc(
+        self,
+        init_state: qt.Qobj,
+    ):
         """ To do
             Need to consider the case self.backend = quantumdevice
         """
-        prob = expect(ket2dm(self.target_state), self.final_state)
-        self.measurement_outcome = np.random.choice(2, 1, p=[(1-prob), prob])[0]
-        return self.measurement_outcome
+        self.target_state = self._map_to_Bell_state("01")
+        prob = qt.expect(qt.ket2dm(self.target_state), init_state)
+        measurement_outcome = np.random.choice(2, 1, p=[(1-prob), prob])[0]
+        reward = self._get_reward(measurement_outcome)
+        return measurement_outcome, reward
 
     def _action_to_control_params(self, action) -> dict:
         return control_params
@@ -102,10 +107,13 @@ class BellStatePrep(QuantumCircuit):
                 }
         return bell_state(bell_map[init_state])
 
-    def _get_reward(self) -> list:
+    def _get_reward(
+        self,
+        measurement_outcome
+    ) -> list:
         """ Bell state projection measurement
         """
-        m = self.measurement_outcome
+        m = measurement_outcome
         reward = [-1 + 2*m]
         return reward
 
