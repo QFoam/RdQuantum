@@ -1,45 +1,37 @@
 from typing import Optional, Tuple, Callable
 
-from gymnasium import spaces
+import gymnasium as gym 
 import qutip as qt
 from qutip.qip.circuit import QubitCircuit, Gate
 from qutip import tensor, basis, bell_state, ket2dm, expect, fidelity
 from qutip.measurement import measure, measure_observable
 
 from rdquantum.quantumcircuit import QuantumCircuit
-from rdquantum.simulator.rydberg_atom import RydbergCz3Level
-#from rdquantum.simulator.rydberg_atom import Rydberg_Cz_3Level
 
 import numpy as np
 
 class BellStatePrep(QuantumCircuit):
     def __init__(
-            self, 
-            processor = RydbergCz3Level,
-            backend: str = "simulator", #quantumdevice/simulator
-            range_amp: tuple[float, str] = [100, "MHz"], 
-            range_gate_time: tuple[float, str] = [1, "mus"]
-            ):
-        self.backend = backend
-        self.processor = processor
-        
+        self, 
+    ):
         """ Quantum circuit for Bell states
         """
         self.num_qubits = 2
-        self.init_state = '01' 
+        self.get_control_circuit()
+        #self.init_state = '01' 
         #self.target_state = bell01
 
         """ RL parameters
             - observation: initial state (constant)
             - action: depends on the quantum system
         """
-        self.observation_space = spaces.Discrete(1, start=1) 
-        #self.action_space = self.system.action_space
+        self.observation_space = gym.spaces.Discrete(1, start=1) 
+
         super().__init__()
 
-    def quantum_circuit(
-            self, 
-            ):
+    def get_control_circuit(
+        self, 
+    ):
         """ Control circuit
                   gp1  gp2  gp3 
             |C> --|H|-- o -------
@@ -61,7 +53,6 @@ class BellStatePrep(QuantumCircuit):
                   |Bell|
             |T> --|    |
         """
-        self.rc = QubitCircuit(N=self.num_qubits, num_cbits=self.num_qubits)
         return self
 
     def run_cc(
@@ -69,8 +60,10 @@ class BellStatePrep(QuantumCircuit):
         init_state: str,
         ideal_hadamard: bool = True,
         ideal_control_z: bool = True
-    ):
-        self.init_state = tensor(basis(2, int(init_state[0])), basis(2, int(init_state[1])))
+    ) -> qt.Qobj:
+        self.init_state = tensor(
+            basis(2, int(init_state[0])), basis(2, int(init_state[1]))
+        )
         self.target_state = self._map_to_Bell_state(init_state)
 
         if ideal_hadamard and ideal_control_z:
@@ -86,6 +79,7 @@ class BellStatePrep(QuantumCircuit):
         self,
         init_state: qt.Qobj,
     ):
+        #self.rc = QubitCircuit(N=self.num_qubits, num_cbits=self.num_qubits)
         """ To do
             Need to consider the case self.backend = quantumdevice
         """
@@ -95,16 +89,13 @@ class BellStatePrep(QuantumCircuit):
         reward = self._get_reward(measurement_outcome)
         return measurement_outcome, reward
 
-    def _action_to_control_params(self, action) -> dict:
-        return control_params
-
     def _map_to_Bell_state(self, init_state):
         bell_map = {
-                '00': '00',
-                '01': '10',
-                '10': '01',
-                '11': '11'
-                }
+            '00': '00',
+            '01': '10',
+            '10': '01',
+            '11': '11'
+        }
         return bell_state(bell_map[init_state])
 
     def _get_reward(

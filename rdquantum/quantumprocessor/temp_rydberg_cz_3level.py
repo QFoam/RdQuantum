@@ -17,11 +17,13 @@ class TempRydbergCz3Level():
         
         # Physical system
         self.num_energy_level = 5
+
         ## Computing basis
         ket00 = qt.tensor(qt.basis(self.num_energy_level,0), qt.basis(self.num_energy_level,0))
         ket01 = qt.tensor(qt.basis(self.num_energy_level,0), qt.basis(self.num_energy_level,1))
         ket10 = qt.tensor(qt.basis(self.num_energy_level,1), qt.basis(self.num_energy_level,0))
         ket11 = qt.tensor(qt.basis(self.num_energy_level,1), qt.basis(self.num_energy_level,1))
+
         ## Hadamard gate
         Had = np.zeros((self.num_energy_level,self.num_energy_level))
         Had[0][0] = 1
@@ -29,6 +31,7 @@ class TempRydbergCz3Level():
         Had[1][0] = 1
         Had[1][1] = -1
         Had = qt.Qobj(Had/np.sqrt(2))
+
         ## Target Bell state, rho_bell10 = 1/sqrt(2) * (|01> + |10>)
         I = qt.qeye(self.num_energy_level)
         rho0101 = qt.tensor(I, Had) * qt.ket2dm(ket01) * qt.tensor(I, Had)
@@ -49,7 +52,7 @@ class TempRydbergCz3Level():
         self.r_amp = r_amp              # MHz
         self.r_gate_time = r_gate_time  # \mu s
 
-        self.obervation_space = self.quantumcircuit.observation_space
+        self.observation_space = self.quantumcircuit.observation_space
         value_eps = 1e-5 # for mumerical stability
         self.action_space = spaces.Dict(
             {

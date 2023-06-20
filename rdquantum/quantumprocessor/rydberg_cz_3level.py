@@ -1,11 +1,45 @@
 from copy import deepcopy
 
+from rdquantum.compiler import RydbergCz3LevelCompiler
+
 import qutip  as qt
 from qutip_qip.device import Model, ModelProcessor
 
-from rdquantum.simulator.compiler import RydbergCz3LevelCompiler
+import gymnasium as gym
 
 import numpy as np
+
+class RydbergCz3LevelProc():
+    def __init__(
+        self,
+        quantumcircuit,
+        **param
+    ):
+        self.core = RydbergCz3Level(**params)
+        self.quantumcircuit = quantumcircuit
+        
+        """ RL parameters
+        """
+        self.observation_space = self.quantumcircuit.observation_space
+        self.action_space = spaces.Dict(
+            {
+                'omega_p_amp': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32)
+                'omega_r_amp': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32),
+                'delta_p_amp': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32),
+                'gate_time': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32)
+            }
+        )
+
+    """
+    def run_rl_step(
+        self,
+        ation
+    ):
+    """
+
+    def _action_to_control_params(self, action) -> dict:
+        return control_params
+
 
 class RydbergCz3Level(ModelProcessor):
     def __init__(
@@ -26,17 +60,6 @@ class RydbergCz3Level(ModelProcessor):
         )
         self.correct_global_phase = correct_global_phase
         self.num_levels = num_levels
-        
-        """ RL parameters
-        self.action_space = spaces.Dict(
-            {
-                'omega_p_amp': spaces.Box(-1, 1, shape=(), dtype=np.float32)
-                'omega_r_amp': spaces.Box(-1, 1, shape=(), dtype=np.float32),
-                'delta_p_amp': spaces.Box(-1, 1, shape=(), dtype=np.float32),
-                'gate_time': spaces.Box(-1, 1, shape=(), dtype=np.float32)
-            }
-        )
-        """
 
     def load_circuit(
         self, 

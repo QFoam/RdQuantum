@@ -38,9 +38,7 @@ class QuantumControlEnv(gym.Env):
         self, 
         action, 
     ):
-        old_observation, reward, terminated = self.quantumprocessor.run_rl_step(
-            action = action, 
-        )
+        old_observation, reward, terminated = self.quantumprocessor.run_rl_step(action = action)
         info = self._get_info()
 
         return old_observation, reward, terminated, False, info
