@@ -13,13 +13,18 @@ import numpy as np
 class BellStatePrep(QuantumCircuit):
     def __init__(
         self, 
+        init_state: str = '01',
+        ideal_hadamard: bool = True,
+        ideal_control_z: bool = True
     ):
         """ Quantum circuit for Bell states
         """
         self.num_qubits = 2
+        self.ideal_hadamard = ideal_hadamard
+        self.ideal_control_z = ideal_control_z
         self.get_control_circuit()
-        #self.init_state = '01' 
-        #self.target_state = bell01
+        self.init_state = init_state 
+        self.target_state = self._map_to_Bell_state(self.init_state)
 
         """ RL parameters
             - observation: initial state (constant)
@@ -57,34 +62,41 @@ class BellStatePrep(QuantumCircuit):
 
     def run_cc(
         self, 
-        init_state: str,
-        ideal_hadamard: bool = True,
-        ideal_control_z: bool = True
+        processor,
+        init_state: str = None,
     ) -> qt.Qobj:
-        self.init_state = tensor(
-            basis(2, int(init_state[0])), basis(2, int(init_state[1]))
-        )
-        self.target_state = self._map_to_Bell_state(init_state)
-
-        if ideal_hadamard and ideal_control_z:
-            gs1 = self.cc["group1"].run(state=self.init_state)
+        if init_state == None:
+            init_state = self.init_state
+        target_state = self._map_to_Bell_state(init_state)
+        init_state = tensor(basis(2, int(init_state[0])), basis(2, int(init_state[1])))
+        if self.ideal_hadamard and self.ideal_control_z:
+            gs1 = self.cc["group1"].run(state=init_state)
             gs2 = self.cc["group2"].run(state=gs1)
-            self.final_state = self.cc["group3"].run(state=gs2)
+            final_state = self.cc["group3"].run(state=gs2)
+        elif self.ideal_hadamard and not self.ideal_control_z:
+            gs1 = self.cc["group1"].run(state=init_state)
+            gs1_converted = processor.generate_init_processor_state(gs1)
+            gs2 = self.cc["group2"].run(state=gs1_converted)
+            gs2_converted = processor.get_final_circuit_state(gs2)
+            final_state = self.cc["group3"].run(state=gs2)
         else:
-            self.final_state = tempRydbergCz3Level(init_state)
+            raise Exception("Sorry, currently we do not support non-ideal Hadamard gate")
 
-        return self.final_state
+        return final_state, target_state
 
     def run_rc(
         self,
-        init_state: qt.Qobj,
+        final_state: qt.Qobj,
+        target_state: qt.Qobj
     ):
-        #self.rc = QubitCircuit(N=self.num_qubits, num_cbits=self.num_qubits)
-        """ To do
-            Need to consider the case self.backend = quantumdevice
+        """ Reward Circuit
+        Currently, we choose Bell measurement as our reward.
+
+        To do:
+            - Need to consider the case self.backend = quantumdevice
+            - Realistic reward
         """
-        self.target_state = self._map_to_Bell_state("01")
-        prob = qt.expect(qt.ket2dm(self.target_state), init_state)
+        prob = qt.expect(qt.ket2dm(target_state), final_state)
         measurement_outcome = np.random.choice(2, 1, p=[(1-prob), prob])[0]
         reward = self._get_reward(measurement_outcome)
         return measurement_outcome, reward

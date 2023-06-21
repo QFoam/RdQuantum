@@ -42,6 +42,7 @@ class TempRydbergCz3Level():
 
         self.rho_bell = [rho0101, rho1010, rho0110]
         self.rho_init = qt.tensor(Had, Had) * qt.ket2dm(ket01) * qt.tensor(Had, Had)        # Initial state |01>
+
         self.gamma_p = 1/0.155          # Decay rate of state |p> (1/\mu s)
         self.gamma_r = 1/540            # Decay rate of state |r> (1/\mu s)
 
@@ -170,7 +171,8 @@ class TempRydbergCz3Level():
             H = self.hamiltonian,
             rho0 = self.rho_init,
             tlist = times,
-            c_ops = self.decay_terms,
+            #c_ops = self.decay_terms,
+            c_ops = [],
             e_ops = e_ops,
             options = qt.Options(nsteps=100000, rhs_reuse=False)
             )

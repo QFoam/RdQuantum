@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from rdquantum.compiler import RydbergCz3LevelCompiler
+from rdquantum.quantumcompiler import RydbergCz3LevelCompiler
 
 import qutip  as qt
 from qutip_qip.device import Model, ModelProcessor
@@ -13,7 +13,7 @@ class RydbergCz3LevelProc():
     def __init__(
         self,
         quantumcircuit,
-        **param
+        **params
     ):
         self.core = RydbergCz3Level(**params)
         self.quantumcircuit = quantumcircuit
@@ -21,24 +21,50 @@ class RydbergCz3LevelProc():
         """ RL parameters
         """
         self.observation_space = self.quantumcircuit.observation_space
-        self.action_space = spaces.Dict(
+        self.action_space = gym.spaces.Dict(
             {
-                'omega_p_amp': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32)
+                'omega_p_amp': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32),
                 'omega_r_amp': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32),
                 'delta_p_amp': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32),
-                'gate_time': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32)
+                'gate_time': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32),
+                'B': gym.spaces.Box(-1, 1, shape=(), dtype=np.float32)
             }
         )
 
-    """
     def run_rl_step(
         self,
         ation
     ):
-    """
+        """ Run control circuit and reward circuit
+        """
+        return observation, reward, terminated
 
+    def run_control_circuit(
+        self,
+        init_state: str = None
+    ):
+        final_state, target_state = self.quantumcircuit.run_cc(
+            processor = self.core,
+            init_state = init_state
+        )
+        return final_state, target_state
+
+    def run_reward_circuit(
+        self,
+        final_state: qt.Qobj,
+        target_state: qt.Qobj
+    ):
+        measurement_outcome, reward = self.quantumcircuit.run_rc(
+            final_state = final_state,
+            target_state = target_state
+        )
+
+        return measurement_outcome, reward
+
+    """
     def _action_to_control_params(self, action) -> dict:
         return control_params
+    """
 
 
 class RydbergCz3Level(ModelProcessor):
@@ -83,7 +109,6 @@ class RydbergCz3Level(ModelProcessor):
     ) -> qt.Qobj:
         q1 = init_circuit_state.ptrace(0)
         q2 = init_circuit_state.ptrace(1)
-
         rho1 = np.zeros([5,5], dtype=complex)
         rho1[0:2, 0:2] = q1[0:2, 0:2]
         rho1 = qt.Qobj(rho1)
@@ -93,6 +118,14 @@ class RydbergCz3Level(ModelProcessor):
         
         init_processor_state = qt.tensor(rho1, rho2)
         return init_processor_state
+
+    def get_final_circuit_state(
+        self,
+        final_processor_state: qt.Qobj
+    ) -> qt.Qobj:
+        """ Extract computing basis
+        """
+        return final_processor_state.extract_states([0,1,5,6], normalize=False)
 
 class RydbergCz3LevelModel(Model):
     """ To do: documentation
