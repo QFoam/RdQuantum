@@ -76,9 +76,15 @@ class BellStatePrep(QuantumCircuit):
         elif self.ideal_hadamard and not self.ideal_control_z:
             gs1 = self.cc["group1"].run(state=init_state)
             gs1_converted = processor.generate_init_processor_state(gs1)
-            gs2 = self.cc["group2"].run(state=gs1_converted)
+            #processor.pulse_mode = "continuous"
+            processor.pulse_mode = "discrete"
+            gs2= processor.run_state(
+                    init_state = gs1_converted,
+                    qc = self.cc["group2"],
+                    options=qt.Options(nsteps=100000, rhs_reuse=False)
+            ).states[-1]
             gs2_converted = processor.get_final_circuit_state(gs2)
-            final_state = self.cc["group3"].run(state=gs2)
+            final_state = self.cc["group3"].run(state=gs2_converted)
         else:
             raise Exception("Sorry, currently we do not support non-ideal Hadamard gate")
 
@@ -99,7 +105,7 @@ class BellStatePrep(QuantumCircuit):
         prob = qt.expect(qt.ket2dm(target_state), final_state)
         measurement_outcome = np.random.choice(2, 1, p=[(1-prob), prob])[0]
         reward = self._get_reward(measurement_outcome)
-        return measurement_outcome, reward
+        return prob, measurement_outcome, reward
 
     def _map_to_Bell_state(self, init_state):
         bell_map = {

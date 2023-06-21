@@ -48,14 +48,14 @@ class RydbergCz3LevelCompiler(GateCompiler):
         #tlist = np.linspace(0.0, coeff_tgate, 100)
         tlist = 1.0
         pulse_info = [
-                ("del_p" + str(q0), coeff_del_p),
-                ("del_p" + str(q1), coeff_del_p),
-                ("omg_p" + str(q0), coeff_omg_p),
-                ("omg_p" + str(q1), coeff_omg_p),
-                ("omg_r" + str(q0), coeff_omg_r),
-                ("omg_r" + str(q1), coeff_omg_r),
-                ("brr", coeff_brr)
-                ]
+            ("del_p" + str(q0), coeff_del_p),
+            ("del_p" + str(q1), coeff_del_p),
+            ("omg_p" + str(q0), coeff_omg_p),
+            ("omg_p" + str(q1), coeff_omg_p),
+            ("omg_r" + str(q0), coeff_omg_r),
+            ("omg_r" + str(q1), coeff_omg_r),
+            ("brr", coeff_brr)
+        ]
 
         return [Instruction(gate, tlist, pulse_info)]
 

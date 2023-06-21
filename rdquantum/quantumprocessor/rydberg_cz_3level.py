@@ -33,10 +33,13 @@ class RydbergCz3LevelProc():
 
     def run_rl_step(
         self,
-        ation
+        ation: dict = None
     ):
         """ Run control circuit and reward circuit
         """
+        final_state, target_state = self.run_control_circuit()
+        prob, observation, reward = self.run_reward_circuit(final_state, target_state)
+        terminated = True
         return observation, reward, terminated
 
     def run_control_circuit(
@@ -54,12 +57,11 @@ class RydbergCz3LevelProc():
         final_state: qt.Qobj,
         target_state: qt.Qobj
     ):
-        measurement_outcome, reward = self.quantumcircuit.run_rc(
+        prob, measurement_outcome, reward = self.quantumcircuit.run_rc(
             final_state = final_state,
             target_state = target_state
         )
-
-        return measurement_outcome, reward
+        return prob, measurement_outcome, reward
 
     """
     def _action_to_control_params(self, action) -> dict:
@@ -125,7 +127,9 @@ class RydbergCz3Level(ModelProcessor):
     ) -> qt.Qobj:
         """ Extract computing basis
         """
-        return final_processor_state.extract_states([0,1,5,6], normalize=False)
+        final_circuit_state = final_processor_state.extract_states([0,1,5,6], normalize=False)
+        final_circuit_state.dims = [[2,2],[2,2]]
+        return final_circuit_state
 
 class RydbergCz3LevelModel(Model):
     """ To do: documentation
