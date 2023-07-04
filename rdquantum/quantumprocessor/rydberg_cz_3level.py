@@ -37,6 +37,10 @@ class RydbergCz3LevelProc():
     ):
         """ Run control circuit and reward circuit
         """
+        if action is not None:
+            control_params = self._convert_action_to_control_params(action)
+            self.core = RydbergCz3Level(**control_params)
+            
         final_state, target_state = self.run_control_circuit()
         prob, observation, reward = self.run_reward_circuit(final_state, target_state)
         terminated = True
@@ -44,8 +48,12 @@ class RydbergCz3LevelProc():
 
     def run_control_circuit(
         self,
-        init_state: str = None
+        init_state: str = None,
+        control_params: dict = None
     ):
+        if control_params is not None:
+            self.core = RydbergCz3Level(**control_params)
+
         final_state, target_state = self.quantumcircuit.run_cc(
             processor = self.core,
             init_state = init_state
